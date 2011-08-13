@@ -1,0 +1,5 @@
+.DS_Store
+nbproject
+app/cache
+app/logs
+app/config/config.php

@@ -1,0 +1,230 @@
+<?php
+
+namespace Bundle\UserBundle\Entity;
+
+use Symfony\Component\Security\Core\User\UserInterface;
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="user")
+ */
+class User implements UserInterface
+{
+
+    public function __construct()
+    {
+        $this->salt = base_convert(sha1(uniqid(mt_rand(), true)), 16, 36);
+        $this->createdOn = new \DateTime();
+    }
+
+    /**
+     * @ORM\Id
+     * @ORM\Column(type="integer")
+     * @ORM\GeneratedValue(strategy="IDENTITY")
+     */
+    protected $id;
+    /**
+     * @ORM\Column(type="string", length="255", nullable="false")
+     * @assert:MaxLength(255)
+     * @assert:Email
+     */
+    protected $username;
+    /**
+     * @ORM\Column(type="string", length="255", nullable="false")
+     */
+    protected $password;
+    
+    /**
+     * @ORM\Column(type="string", length="255", nullable="false")
+     */
+    protected $salt;
+    /**
+     * @ORM\Column(name="created_on", type="datetime", nullable="false")
+     * @assert:DateTime()
+     */
+    protected $createdOn;
+    /**
+     * @ORM\OneToMany(targetEntity="Bundle\UserBundle\Entity\UserPermission", mappedBy="user", cascade={"persist", "remove"}, fetch="EAGER")
+     */
+    protected $userPermissions;
+
+    /**
+     * Id
+     * @return integer
+     */
+    public function getId()
+    {
+        
+        return $this->id;
+    }
+
+    /**
+     * Gets the full name of the user
+     * @return string
+     */
+    public function getFullName()
+    {
+        
+        return $this->fullname;
+    }
+
+    /**
+     * Gets the username
+     * @return string
+     */
+    public function getUsername()
+    {
+        
+        return $this->usename;
+    }
+    
+    public function getPassword()
+    {
+        
+        return $this->password;
+    }
+    
+    public function getSalt()
+    {
+        
+        return $this->salt;
+    }
+
+    public function eraseCredentials(){}
+    
+    /**
+     * Gets the creation time of the notification
+     * @return DateTime
+     */
+    public function getCreatedOn()
+    {
+        
+        return $this->createdOn;
+    }
+
+    public function getUserPermissions()
+    {
+        
+        return $this->userPermissions;
+    }
+
+    /**
+     * Sets the username
+     * @param string $username
+     */
+    public function setUsername($username)
+    {
+        $this->username = $username;
+    }
+
+    /**
+     * Sets the password of the user
+     * @param string $password
+     */
+    public function setPassword($password)
+    {
+        $this->password = $password;
+    }
+
+    /**
+     * Set the permission for a user
+     *
+     * @param  Bundle\UserBundle\Entity\UserPermission[] $userPermissions
+     */
+    public function setUserPermissions($userPermissions)
+    {
+        if (null === $this->userPermissions) {
+            $this->userPermissions = new ArrayCollection();
+        } else {
+            $this->userPermissions->clear();
+        }
+
+        foreach ($userPermissions as $userPermission) {
+            $this->userPermissions->add($userPermission);
+            $userPermission->setUser($this);
+        }
+    }
+
+
+    /**
+     * Return whether the user has a specific permission or not.
+     *
+     * NOTE: THIS IS NOT TO BE USER FOR AUTHORIZATION
+     * It is intended for view related stuff
+     *
+     * @param  Bundle\UserBundle\Entity\Permission $permission
+     * @return bool
+     */
+    public function hasPermission($permission)
+    {
+        if (null === $this->userPermissions) {
+            return false;
+        }
+
+        /** @var \Bundle\UserBundle\Entity\UserPermission $up */
+        foreach ($this->userPermissions as $up)
+        {
+            if ($permission === $up->getPermission()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+
+
+    /**
+     * Returns the roles granted to the user.
+     * @return Role[] The user roles
+     */
+    function getRoles()
+    {
+        $roles = array();
+
+        if (null !== $this->userPermissions) {
+            foreach ($this->userPermissions as $userPermission)
+            {
+                $roles[] = $userPermission;
+            }
+        }
+
+        // we need to make sure to have at least one role
+        $roles[] = 'ROLE_USER';
+
+        return $roles;
+    }
+
+    /**
+     * The equality comparison should neither be done by referential equality
+     * nor by comparing identities (i.e. getId() === getId()).
+     *
+     * However, you do not need to compare every attribute, but only those that
+     * are relevant for assessing whether re-authentication is required.
+     *
+     * @param UserInterface|\Bundle\UserBundle\Entity\User $account
+     * @return Boolean
+     */
+    function equals(UserInterface $account)
+    {
+        if (!$account instanceof User) {
+            return false;
+        }
+
+        return ($this->username === $account->getUsername()
+                && $this->password === $account->getPassword()
+                && $this->salt . User::STATIC_SALT === $account->getSalt()
+                && $this->getUserPermissions() === $account->getUserPermissions());
+    }
+
+
+
+    public function __toString()
+    {
+        return (string)$this->getUsername();
+    }
+
+}

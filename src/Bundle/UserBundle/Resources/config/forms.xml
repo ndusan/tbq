@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <parameters>
+        <!--Form-->
+        <parameter key="user.form.type.user.class">Bundle\UserBundle\Form\UserType</parameter>
+        <parameter key="user.form.type.user.name">tbq_form_user_form</parameter>
+    </parameters>
+
+
+    <services>
+        <!-- Forms -->
+        <service id="user.form.user" factory-method="create" factory-service="form.factory" class="%form.factory.class%">
+            <argument type="service" id="user.form.type.user" />
+            <argument />
+            <argument type="collection">
+                <argument key="data_class">%user.model.user.class%</argument>
+            </argument>
+        </service>
+        
+        <service id="user.form.type.user" class="%user.form.type.user.class%">
+            <argument>%user.form.type.user.name%</argument>
+            <tag name="form.type" />
+        </service>
+        
+    </services>
+
+</container>
